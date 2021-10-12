@@ -1,6 +1,31 @@
 import torch
 from transformers import pipeline as hf_pipeline
 
+from flair.models import TARSTagger
+from flair.data import Sentence
+
+
+class ZeroShotNERPipeline:
+    def __init__(
+        self,
+        model='tars-ner',
+    ):
+        self.model = TARSTagger.load(model)
+
+    def __call__(self, query, labels):
+        self.model.add_and_switch_to_new_task('task', labels, label_type='ner', force_switch=True)
+
+        if not isinstance(query, list):
+            inputs = [query]
+        else:
+            inputs = query
+
+        inputs = [Sentence(s) for s in inputs]
+        self.model.predict(inputs)
+        outputs = [sentence.to_tagged_string("ner") for sentence in inputs]
+
+        return outputs
+
 
 class SemanticSearchPipeline:
     def __init__(
